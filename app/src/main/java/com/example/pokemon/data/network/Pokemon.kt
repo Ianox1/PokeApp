@@ -70,13 +70,20 @@ data class PokemonDetails(
     val abilities: List<Ability>,
     val height: Int,
     val weight: Int,
-    val species: Species // Añadido para incluir los datos de la especie
+    val species: Species ,
+    val cries: Cries
+)
+
+@Serializable
+data class Cries(
+    val latest: String,
+    val legacy: String
 )
 
 @Serializable
 data class Species(
-    val name: String, // Nombre de la especie (por ejemplo, "bulbasaur")
-    val url: String // URL para obtener más detalles sobre la especie
+    val name: String,
+    val url: String
 )
 
 @Serializable
@@ -92,8 +99,8 @@ data class Ability(
 
 @Serializable
 data class AbilityDetail(
-    val name: String, // Nombre de la habilidad
-    val url: String // URL de la habilidad
+    val name: String,
+    val url: String
 )
 @Serializable
 data class Stat(
@@ -154,7 +161,16 @@ data class Espada(
     val icon: String?
 )
 
+@Serializable
+data class PokemonFlavorText(
+    @SerialName("flavor_text_entries")
+    val flavorTextEntries: List<FlavorTextEntry>
+)
 
-
+@Serializable
+data class FlavorTextEntry(
+    @SerialName("flavor_text")
+    val flavorText: String
+)
 
 

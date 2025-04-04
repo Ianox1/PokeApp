@@ -5,12 +5,15 @@ import android.os.Build
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pokemon.data.network.GeneralType
 import com.example.pokemon.data.network.PokeApi
 import com.example.pokemon.data.network.Pokemon
 import com.example.pokemon.data.network.PokemonDetails
+import com.example.pokemon.data.network.PokemonFlavorText
 import com.example.pokemon.data.network.PokemonResponseType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -224,5 +227,21 @@ class PokemonViewModel : ViewModel() {
             ventanaDetalles = true,
             currentPokemon = selectedPokemon
         )
+    }
+
+    private val _descriptionState = MutableLiveData<PokemonFlavorText?>()
+    val descriptionState: LiveData<PokemonFlavorText?> get() = _descriptionState
+
+    fun fetchPokemonDescription(url: String) {
+        viewModelScope.launch {
+            try {
+                val description = PokeApi.retrofitService.getDescription(url)
+                _descriptionState.value = description
+            } catch (e: Exception) {
+                // Manejo de errores
+                e.printStackTrace()
+                _descriptionState.value = null
+            }
+        }
     }
 }

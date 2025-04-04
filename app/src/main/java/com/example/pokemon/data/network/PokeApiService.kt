@@ -15,5 +15,7 @@ interface PokeApiService {
     suspend fun getTypeDetails(@Url url: String): PokemonResponseType
     @GET("type/{type}")
     suspend fun getTypePoke(@Path("type") type: String): PokemonResponseType
+    @GET
+    suspend fun getDescription(@Url url: String): PokemonFlavorText
 
 }

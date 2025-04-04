@@ -3,13 +3,17 @@ package com.example.pokemon.ui.screens
 
 
 
+import android.media.MediaPlayer
 import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -57,12 +62,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -502,18 +509,22 @@ fun FilterDialog(
 }
 
 
-@OptIn(ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PokemonDetailsScreen(
     viewModel: PokemonViewModel,
     modifier: Modifier = Modifier
 ) {
+
+    var isDialogVisible by remember { mutableStateOf(false) }
+
     var isShowingFront by remember { mutableStateOf(true) }
     val primaryTypeColor = viewModel.state.currentPokemon?.types?.get(0)?.type?.name?.let {
         getColorFromType(it)
     } ?: Color.Gray // Color por defecto si no hay tipo
 
-    val titleTextColor = if (viewModel.state.currentPokemon?.types?.get(0)?.type?.name == "poison"|| viewModel.state.currentPokemon?.types?.get(0)?.type?.name == "dark" || viewModel.state.currentPokemon?.types?.get(0)?.type?.name == "fire" || viewModel.state.currentPokemon?.types?.get(0)?.type?.name == "psychic" ) {
+    val darkTextTypes = listOf("poison", "dragon", "dark", "fire", "psychic", "ghost")
+    val titleTextColor = if (viewModel.state.currentPokemon?.types?.get(0)?.type?.name in darkTextTypes) {
         Color.White
     } else {
         Color.Black
@@ -552,7 +563,10 @@ fun PokemonDetailsScreen(
                             shape = RoundedCornerShape(16.dp)
                         )
                         .padding(10.dp)
-                        .clickable { isShowingFront = !isShowingFront }
+                        .combinedClickable(
+                            onDoubleClick = { isDialogVisible = true },
+                            onClick = { isShowingFront = !isShowingFront }
+                        )
                 ) {
                     GlideImage(
                         model = imageUrl,
@@ -712,10 +726,140 @@ fun PokemonDetailsScreen(
                     }
                 }
             }
+            if (isDialogVisible) {
+                PokemonDialog(
+                    imageUrl = viewModel.state.currentPokemon?.sprites?.other?.showdown?.frontDefault,
+                    backgroundDrawable = getDrawableFromType(
+                        viewModel.state.currentPokemon?.types?.get(0)?.type?.name ?: "default"
+                    ),
+                    onDismiss = { isDialogVisible = false },
+                    getUrl = viewModel.state.currentPokemon?.species?.url,
+                    viewModel = viewModel
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun PokemonDialog(
+    imageUrl: String?,
+    backgroundDrawable: Int,
+    onDismiss: () -> Unit,
+    getUrl: String?,
+    viewModel: PokemonViewModel
+) {
+    var isLatestCry by remember { mutableStateOf(true) } // Alterna entre `latest` y `legacy`
+
+    LaunchedEffect(getUrl) {
+        getUrl?.let { viewModel.fetchPokemonDescription(it) }
+    }
+
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.8f))
+        ) {
+            Image(
+                painter = painterResource(backgroundDrawable),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                GlideImage(
+                    model = imageUrl,
+                    contentDescription = "Imagen del Pokémon",
+                    modifier = Modifier
+                        .size(300.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { // Reproducir sonido al "frotar" o presionar
+                                    val cryUrl = if (isLatestCry) {
+                                        viewModel.state.currentPokemon?.cries?.latest
+                                    } else {
+                                        viewModel.state.currentPokemon?.cries?.legacy
+                                    }
+                                    cryUrl?.let {
+                                        playCry(it) // Reproduce el sonido desde la URL
+                                        isLatestCry = !isLatestCry // Alterna entre `latest` y `legacy`
+                                    }
+                                }
+                            )
+                        },
+                    contentScale = ContentScale.Fit
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .clickable { onDismiss() }
+            ) {
+                Text(
+                    text = "X",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White
+                )
+            }
+            Box(
+                modifier = Modifier.align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                val description = viewModel.descriptionState.observeAsState().value
+                description?.flavorTextEntries?.get(5)?.let { flavorTextEntry ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = getColorFromType(
+                                viewModel.state.currentPokemon?.types?.get(0)?.type?.name ?: "hola"
+                            )
+                        )
+                    ) {
+                        Text(
+                            text = flavorTextEntry.flavorText.replace("\n", " "), // Reemplaza los saltos de línea por espacios
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+fun playCry(cryUrl: String) {
+    Log.e("cry",cryUrl)
+    try {
+        val mediaPlayer = MediaPlayer()
+        mediaPlayer.setDataSource(cryUrl)
+        mediaPlayer.prepare() // Prepara el archivo de audio
+        mediaPlayer.start() // Reproduce el audio
+        mediaPlayer.setOnCompletionListener {
+            mediaPlayer.reset() // Limpia el estado antes de liberar
+            mediaPlayer.release() // Libera los recursos cuando termina
+        }
+        mediaPlayer.setOnErrorListener { _, _, _ ->
+            mediaPlayer.reset() // Limpia el estado en caso de error
+            mediaPlayer.release() // Libera los recursos en caso de error
+            true // Indica que se manejó el error
+        }
+    } catch (e: Exception) {
+        e.printStackTrace() // Manejo de errores
+    }
+}
 
 
 
