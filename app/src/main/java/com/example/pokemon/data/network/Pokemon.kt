@@ -76,8 +76,8 @@ data class PokemonDetails(
 
 @Serializable
 data class Cries(
-    val latest: String,
-    val legacy: String
+    val latest: String?,
+    val legacy: String?
 )
 
 @Serializable

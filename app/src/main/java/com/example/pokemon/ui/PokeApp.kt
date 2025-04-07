@@ -2,24 +2,16 @@ package com.example.pokemon.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 
 import androidx.compose.foundation.layout.Column
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -32,13 +24,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
@@ -49,9 +39,9 @@ import com.example.pokemon.R
 import com.example.pokemon.model.PokeIntent
 import com.example.pokemon.model.PokeUiState
 import com.example.pokemon.model.PokemonViewModel
-import com.example.pokemon.ui.screens.FilterDialog
-import com.example.pokemon.ui.screens.HomeScreen
-import com.example.pokemon.ui.screens.LoginScreen
+import com.example.pokemon.ui.screens.mains.FilterDialog
+import com.example.pokemon.ui.screens.mains.HomeScreen
+import com.example.pokemon.ui.screens.mains.LoginScreen
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,12 +54,10 @@ fun PokeApp(innerPadding: PaddingValues) {
     val selectedFilter = remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        // Elimina el comportamiento de desplazamiento si ventanaDetalles es true
         modifier = if (pokeViewModel.state.ventanaDetalles) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             if (pokeViewModel.pokeUiState !is PokeUiState.Login) {
                 PokeTopAppBar(
-                    // Pasa un comportamiento de scroll solo si ventanaDetalles es false
                     scrollBehavior = if (pokeViewModel.state.ventanaDetalles) null else scrollBehavior,
                     showBackArrow = pokeViewModel.state.ventanaDetalles,
                     onBackArrowClick = { pokeViewModel.moveToLista() }
