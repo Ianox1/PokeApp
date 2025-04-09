@@ -1,5 +1,6 @@
 package com.example.pokemon.ui.screens.pokeDetail
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.pokemon.model.DialogState
+import com.example.pokemon.model.PokemonDetailsState
+import com.example.pokemon.model.PokemonDialogModelView
 import com.example.pokemon.model.PokemonViewModel
 import com.example.pokemon.utils.getColorFromType
 import com.example.pokemon.utils.playCry
@@ -42,13 +47,24 @@ fun PokemonDialog(
     backgroundDrawable: Int,
     onDismiss: () -> Unit,
     getUrl: String?,
-    viewModel: PokemonViewModel
+    pokemonDetailsState: PokemonDetailsState,
+    pokemonDialogState: DialogState,
+    onChangeCry: () -> Unit,
+    getDescription: (String) -> Unit
 ) {
-    var isLatestCry by remember { mutableStateOf(true) }
+
+    var isLatestCryState by remember { mutableStateOf(true) }
+
 
     LaunchedEffect(getUrl) {
-        getUrl?.let { viewModel.fetchPokemonDescription(it) }
+        getUrl?.let {
+            getDescription(it) }
     }
+    LaunchedEffect(pokemonDialogState.isLatestCry) {
+        isLatestCryState = pokemonDialogState.isLatestCry
+        Log.e("Recomposition", "isLatestCry cambió a: ${pokemonDialogState.isLatestCry}")
+    }
+
 
     Dialog(onDismissRequest = { onDismiss() }) {
         Box(
@@ -76,15 +92,17 @@ fun PokemonDialog(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onPress = {
-                                    val cries = viewModel.state.currentPokemon?.cries
+                                    val cries = pokemonDetailsState.currentPokemon?.cries
                                     val cryUrl = if (cries?.legacy.isNullOrEmpty()) {
                                         cries?.latest // Si `legacy` es nulo o vacío, siempre usa `latest`
                                     } else {
-                                        if (isLatestCry) cries?.latest else cries?.legacy
+                                        Log.e("hola", pokemonDialogState.isLatestCry.toString() )
+                                        if (isLatestCryState) cries?.latest else cries?.legacy
                                     }
                                     cryUrl?.let {
                                         playCry(it) // Reproduce el sonido desde la URL
-                                        isLatestCry = !isLatestCry // Alterna entre `latest` y `legacy`
+                                        onChangeCry()
+                                        Log.e("hola2", pokemonDialogState.isLatestCry.toString() )
                                     }
                                 }
                             )
@@ -109,7 +127,7 @@ fun PokemonDialog(
                 modifier = Modifier.align(Alignment.BottomCenter)
                     .padding(16.dp)
             ) {
-                val description = viewModel.descriptionState.observeAsState().value
+                val description = pokemonDialogState.description
                 description?.flavorTextEntries?.get(5)?.let { flavorTextEntry ->
                     Card(
                         modifier = Modifier
@@ -117,12 +135,12 @@ fun PokemonDialog(
                             .wrapContentHeight(),
                         colors = CardDefaults.cardColors(
                             containerColor = getColorFromType(
-                                viewModel.state.currentPokemon?.types?.get(0)?.type?.name ?: "hola"
+                                pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: "hola"
                             )
                         )
                     ) {
                         Text(
-                            text = flavorTextEntry.flavorText.replace("\n", " "), // Reemplaza los saltos de línea por espacios
+                            text = flavorTextEntry.flavorText.replace("\n", " "),
                             modifier = Modifier.padding(16.dp),
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Black

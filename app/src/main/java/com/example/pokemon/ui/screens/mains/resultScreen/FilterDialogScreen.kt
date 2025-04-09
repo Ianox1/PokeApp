@@ -28,7 +28,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,17 +36,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.pokemon.data.network.GeneralType
+import com.example.pokemon.model.HomeScreenState
 import com.example.pokemon.model.PokeIntent
+import com.example.pokemon.model.PokemonState
 import com.example.pokemon.model.PokemonViewModel
 
 @Composable
 fun FilterDialog(
-    showDialog: MutableState<Boolean>,
-    selectedFilter: MutableState<String?>,
-    pokemonTypes: List<GeneralType>,
-    viewModel: PokemonViewModel
+    state: HomeScreenState,
+    pokemonState: PokemonState,
+    onDismiss: () -> Unit,
+    onClick: (String?) -> Unit,
+    getPokeType: (String) -> Unit,
+    cargar: ()-> Unit,
+    pokemonsType: (String) -> Unit
+
 ) {
-    Dialog(onDismissRequest = { showDialog.value = false }) {
+    Dialog(onDismissRequest = { onDismiss() }) {
         Surface(
             shape = RoundedCornerShape(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -60,7 +65,7 @@ fun FilterDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    IconButton(onClick = { showDialog.value = false }) {
+                    IconButton(onClick = { onDismiss() }) {
                         Icon(Icons.Default.Close, contentDescription = "Cerrar")
                     }
                 }
@@ -84,8 +89,8 @@ fun FilterDialog(
                         .offset(y = (-30).dp),
                     contentPadding = PaddingValues(8.dp)
                 ) {
-                    items(pokemonTypes) { typeDetail ->
-                        val typeDetails = viewModel.state.typeDetailsMap[typeDetail.url]
+                    items(pokemonState.pokemonTypes) { typeDetail ->
+                        val typeDetails = pokemonState.typeDetailsMap[typeDetail.url]
                         if (typeDetails != null) {
                             if (typeDetails.sprites.generation.EspadaEscudo.icon != null) {
                                 Box(
@@ -100,22 +105,18 @@ fun FilterDialog(
                                             .width(100.dp)
                                             .height(20.dp)
                                             .clickable {
-                                                selectedFilter.value =
-                                                    if (selectedFilter.value == typeDetail.name) null else typeDetail.name
-                                                if (selectedFilter.value == typeDetail.name) {
-                                                    viewModel.handleIntent(
-                                                        PokeIntent.GetPokemonResponseType(
-                                                            typeDetail.name
-                                                        )
-                                                    )
+                                                onClick(if (state.selectedFilter == typeDetail.name) null
+                                                else typeDetail.name)
+                                                if (state.selectedFilter == typeDetail.name) {
+                                                    cargar()
                                                 } else {
-                                                    viewModel.handleIntent(PokeIntent.CargarDatos)
+                                                   pokemonsType(typeDetail.name)
                                                 }
                                             },
                                         contentScale = ContentScale.FillBounds
                                     )
 
-                                    if (selectedFilter.value == typeDetail.name) {
+                                    if (state.selectedFilter == typeDetail.name) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = "Seleccionado",
@@ -130,7 +131,7 @@ fun FilterDialog(
                             }
                         }else {
                             LaunchedEffect(typeDetail.url) {
-                                viewModel.handleIntent(PokeIntent.GetPokemonTypeDetails(typeDetail.url))
+                                getPokeType(typeDetail.url)
                             }
                             Box(
                                 modifier = Modifier

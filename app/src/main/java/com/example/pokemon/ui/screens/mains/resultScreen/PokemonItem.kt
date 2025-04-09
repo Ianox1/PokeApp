@@ -27,22 +27,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.pokemon.data.network.Pokemon
+import com.example.pokemon.data.network.PokemonDetails
 import com.example.pokemon.model.PokeIntent
-import com.example.pokemon.model.PokemonViewModel
+import com.example.pokemon.model.PokemonState
 import com.example.pokemon.utils.createGradientBrush
 import com.example.pokemon.utils.getColorFromType
 
 @Composable
 fun PokemonItem(
     pokemon: Pokemon,
-    viewModel: PokemonViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    moveToDetalles: (PokemonDetails) -> Unit,
+    pokemonState: PokemonState,
+    pokemonDetails: (String) -> Unit,
 ) {
-    val pokemonDetails = viewModel.state.pokemonDetailsMap[pokemon.url]
+    val pokemonDetails = pokemonState.pokemonDetailsMap[pokemon.url]
     var color: Color
     LaunchedEffect(pokemon.url) {
         if (pokemonDetails == null) {
-            viewModel.handleIntent(PokeIntent.GetPokemonDetails(pokemon.url))
+            pokemonDetails(pokemon.url)
         }
     }
 
@@ -55,7 +58,7 @@ fun PokemonItem(
             )
             .clickable {
                 if (pokemonDetails != null) {
-                    viewModel.moveToDetalles(pokemonDetails)
+                    moveToDetalles(pokemonDetails)
                 }
             }
     ) {
@@ -72,7 +75,7 @@ fun PokemonItem(
                         .padding(8.dp)
                 ) {
                     if (pokemonDetails != null) {
-                        pokemonDetails.sprites?.frontDefault?.let { imageUrl ->
+                        pokemonDetails.sprites.frontDefault?.let { imageUrl ->
                             AsyncImage(
                                 model = imageUrl,
                                 contentDescription = "Imagen del Pokémon",

@@ -30,4 +30,5 @@ androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtim
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+dagger-hilt = { id = "com.google.dagger.hilt.android", version = "2.44.2" }
 

@@ -35,6 +35,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.pokemon.model.DialogState
+import com.example.pokemon.model.PokemonDetailsState
+import com.example.pokemon.model.PokemonDialogModelView
+import com.example.pokemon.model.PokemonState
 import com.example.pokemon.model.PokemonViewModel
 import com.example.pokemon.utils.createGradientBrush
 import com.example.pokemon.utils.getColorFromType
@@ -43,22 +47,17 @@ import com.example.pokemon.utils.getDrawableFromType
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PokemonDetailsScreen(
-    viewModel: PokemonViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pokemonDetailsState: PokemonDetailsState,
+    onChangeDialog: () -> Unit,
+    onChangeFront: () -> Unit,
+    onUpdateColor: (String) -> Unit,
+    pokemonDialogState: DialogState,
+    onChangeCry: () -> Unit ,
+    getDescription: (String) -> Unit
 ) {
-
-    var isDialogVisible by remember { mutableStateOf(false) }
-
-    var isShowingFront by remember { mutableStateOf(true) }
-    val primaryTypeColor = viewModel.state.currentPokemon?.types?.get(0)?.type?.name?.let {
-        getColorFromType(it)
-    } ?: Color.Gray // Color por defecto si no hay tipo
-
-    val darkTextTypes = listOf("poison", "dragon", "dark", "fire", "psychic", "ghost")
-    val titleTextColor = if (viewModel.state.currentPokemon?.types?.get(0)?.type?.name in darkTextTypes) {
-        Color.White
-    } else {
-        Color.Black
+    pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name?.let {
+        onUpdateColor(it)
     }
 
     Box(
@@ -68,7 +67,7 @@ fun PokemonDetailsScreen(
         Image(
             painter = painterResource(
                 getDrawableFromType(
-                    viewModel.state.currentPokemon?.types?.get(0)?.type?.name ?: "default"
+                    pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: "default"
                 )
             ),
             contentDescription = null,
@@ -82,21 +81,21 @@ fun PokemonDetailsScreen(
                 .padding(top = 100.dp, end = 20.dp, start = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            viewModel.state.currentPokemon?.sprites?.other?.showdown?.let { sprites ->
-                val imageUrl = if (isShowingFront) sprites.frontDefault else sprites.backDefault
+            pokemonDetailsState.currentPokemon?.sprites?.other?.showdown?.let { sprites ->
+                val imageUrl = if (pokemonDetailsState.isShowingFront) sprites.frontDefault else sprites.backDefault
 
                 Box(
                     modifier = Modifier
                         .size(220.dp)
                         .align(Alignment.CenterHorizontally)
                         .background(
-                            brush = createGradientBrush(viewModel.state.currentPokemon!!.types),
+                            brush = createGradientBrush(pokemonDetailsState.currentPokemon!!.types),
                             shape = RoundedCornerShape(16.dp)
                         )
                         .padding(10.dp)
                         .combinedClickable(
-                            onDoubleClick = { isDialogVisible = true },
-                            onClick = { isShowingFront = !isShowingFront }
+                            onDoubleClick = { onChangeDialog() },
+                            onClick = { onChangeFront() }
                         )
                 ) {
                     GlideImage(
@@ -112,14 +111,14 @@ fun PokemonDetailsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            viewModel.state.currentPokemon?.species?.name?.let { name ->
+            pokemonDetailsState.currentPokemon?.species?.name?.let { name ->
                 Text(
                     text = "Nombre:",
                     style = MaterialTheme.typography.titleMedium,
-                    color = titleTextColor
+                    color = pokemonDetailsState.titleTextColor
                 )
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = primaryTypeColor),
+                    colors = CardDefaults.cardColors(containerColor = pokemonDetailsState.primaryTypeColor),
                     modifier = Modifier.padding(8.dp)
                 ) {
                     Text(
@@ -135,14 +134,14 @@ fun PokemonDetailsScreen(
             Text(
                 text = "Información Básica:",
                 style = MaterialTheme.typography.titleMedium,
-                color = titleTextColor
+                color = pokemonDetailsState.titleTextColor
             )
             Card(
-                colors = CardDefaults.cardColors(containerColor = primaryTypeColor),
+                colors = CardDefaults.cardColors(containerColor = pokemonDetailsState.primaryTypeColor),
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text(
-                    text = String.format("#%03d", viewModel.state.currentPokemon?.id),
+                    text = String.format("#%03d", pokemonDetailsState.currentPokemon?.id),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(8.dp),
                     color = Color.White
@@ -155,11 +154,11 @@ fun PokemonDetailsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
-                    "Altura: ${viewModel.state.currentPokemon?.height} dm",
-                    "Peso: ${viewModel.state.currentPokemon?.weight} hg"
+                    "Altura: ${pokemonDetailsState.currentPokemon?.height} dm",
+                    "Peso: ${pokemonDetailsState.currentPokemon?.weight} hg"
                 ).forEach { text ->
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = primaryTypeColor),
+                        colors = CardDefaults.cardColors(containerColor = pokemonDetailsState.primaryTypeColor),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
@@ -179,11 +178,11 @@ fun PokemonDetailsScreen(
             Text(
                 text = "Tipos:",
                 style = MaterialTheme.typography.titleMedium,
-                color = titleTextColor
+                color = pokemonDetailsState.titleTextColor
             )
             Row(modifier = Modifier.padding(8.dp)) {
 
-                viewModel.state.currentPokemon?.types?.forEach { tipo ->
+                pokemonDetailsState.currentPokemon?.types?.forEach { tipo ->
                     Card(
                         colors = CardDefaults.cardColors(containerColor = getColorFromType(tipo.type.name)),
                         modifier = Modifier.padding(8.dp)
@@ -201,11 +200,11 @@ fun PokemonDetailsScreen(
             Text(
                 text = "Habilidades:",
                 style = MaterialTheme.typography.titleMedium,
-                color = titleTextColor
+                color = pokemonDetailsState.titleTextColor
             )
-            viewModel.state.currentPokemon?.abilities?.let { abilities ->
+            pokemonDetailsState.currentPokemon?.abilities?.let { abilities ->
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = primaryTypeColor),
+                    colors = CardDefaults.cardColors(containerColor = pokemonDetailsState.primaryTypeColor),
                     modifier = Modifier.padding(8.dp)
                 ) {
                     Column(modifier = Modifier.padding(8.dp)) {
@@ -224,14 +223,14 @@ fun PokemonDetailsScreen(
             Text(
                 text = "Estadísticas:",
                 style = MaterialTheme.typography.titleMedium,
-                color = titleTextColor
+                color = pokemonDetailsState.titleTextColor
             )
-            viewModel.state.currentPokemon?.stats?.let { stats ->
+           pokemonDetailsState.currentPokemon?.stats?.let { stats ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 50.dp, top = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = primaryTypeColor)
+                    colors = CardDefaults.cardColors(containerColor = pokemonDetailsState.primaryTypeColor)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -257,15 +256,18 @@ fun PokemonDetailsScreen(
                     }
                 }
             }
-            if (isDialogVisible) {
+            if (pokemonDetailsState.isDialogVisible) {
                 PokemonDialog(
-                    imageUrl = viewModel.state.currentPokemon?.sprites?.other?.showdown?.frontDefault,
+                    imageUrl = pokemonDetailsState.currentPokemon?.sprites?.other?.showdown?.frontDefault,
                     backgroundDrawable = getDrawableFromType(
-                        viewModel.state.currentPokemon?.types?.get(0)?.type?.name ?: "default"
+                        pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: "default"
                     ),
-                    onDismiss = { isDialogVisible = false },
-                    getUrl = viewModel.state.currentPokemon?.species?.url,
-                    viewModel = viewModel
+                    onDismiss = { onChangeDialog() },
+                    getUrl = pokemonDetailsState.currentPokemon?.species?.url,
+                    pokemonDetailsState = pokemonDetailsState,
+                    pokemonDialogState = pokemonDialogState,
+                    onChangeCry = {onChangeCry()},
+                    getDescription = {getDescription(it)}
                 )
             }
         }

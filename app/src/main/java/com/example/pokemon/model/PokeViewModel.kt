@@ -1,7 +1,5 @@
 package com.example.pokemon.model
 
-import android.net.http.HttpException
-import android.os.Build
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -15,9 +13,11 @@ import com.example.pokemon.data.network.Pokemon
 import com.example.pokemon.data.network.PokemonDetails
 import com.example.pokemon.data.network.PokemonFlavorText
 import com.example.pokemon.data.network.PokemonResponseType
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
+import javax.inject.Inject
 
 
 data class SearchState(
@@ -33,9 +33,7 @@ data class PokemonState(
     val nextUrl: String = "https://pokeapi.co/api/v2/pokemon",
     var canLoadMore: Boolean = true,
     val searchState: SearchState = SearchState(),
-    var currentPokemon: PokemonDetails? = null,
-    var ventanaLista: Boolean = true,
-    var ventanaDetalles: Boolean = false
+    val ventanaLista: Boolean = false
 )
 
 sealed interface PokeUiState {
@@ -53,9 +51,14 @@ sealed interface PokeIntent {
     data class GetPokemonTypeDetails(val typeUrl: String) : PokeIntent
     data class GetPokemonResponseType(val typeName: String) : PokeIntent
     object CargarDatos : PokeIntent
+    data class moveToDetalles(val pokemonDetails: PokemonDetails) : PokeIntent
 }
 
-class PokemonViewModel : ViewModel() {
+
+@HiltViewModel
+class PokemonViewModel @Inject constructor() : ViewModel() {
+
+    private var sharedViewModel: SharedViewModel? = null
 
     private var _state by mutableStateOf(PokemonState())
     val state: PokemonState
@@ -64,8 +67,20 @@ class PokemonViewModel : ViewModel() {
     var pokeUiState: PokeUiState by mutableStateOf(PokeUiState.Login)
         private set
 
+    fun setSharedViewModel(sharedViewModel: SharedViewModel) {
+        this.sharedViewModel = sharedViewModel
+
+        // Observamos los cambios en ventanaLista desde el SharedViewModel
+        this.sharedViewModel?.ventanaState?.observeForever { ventanaState ->
+            _state = _state.copy(
+                ventanaLista = ventanaState.ventanaLista
+            )
+        }
+    }
+
     init {
         getPokeData()
+        loadPokemonTypes()
     }
 
     fun handleIntent(intent: PokeIntent) {
@@ -77,13 +92,14 @@ class PokemonViewModel : ViewModel() {
             is PokeIntent.GetPokemonTypeDetails -> getPokemonTypeDetails(intent.typeUrl)
             is PokeIntent.GetPokemonResponseType -> getPokemonResponseType(intent.typeName)
             is PokeIntent.CargarDatos -> cargarDatos()
+            is PokeIntent.moveToDetalles -> moveToDetalles(intent.pokemonDetails)
         }
     }
 
     fun getPokeData() {
         viewModelScope.launch {
-            pokeUiState = PokeUiState.Login // Estado inicial "Login" mientras se espera
-            delay(3000) // Simula un retraso como en el código original
+            pokeUiState = PokeUiState.Login
+            delay(3000)
             pokeUiState = try {
                 val listResult = PokeApi.retrofitService.getPokemons(_state.nextUrl).results
                 val response = PokeApi.retrofitService.getPokemons(_state.nextUrl)
@@ -114,7 +130,7 @@ class PokemonViewModel : ViewModel() {
     }
 
     private fun loadMorePokemons() {
-        if (_state.canLoadMore) {
+        if (_state.canLoadMore && _state.nextUrl.isNotEmpty()) { // Verifica si hay ruta en nextUrl
             viewModelScope.launch {
                 pokeUiState = PokeUiState.Loading
                 try {
@@ -123,15 +139,16 @@ class PokemonViewModel : ViewModel() {
                     _state = _state.copy(
                         allPokemons = _state.allPokemons + newPokemons,
                         allPokemonsType = _state.allPokemonsType + newPokemons,
-                        nextUrl = response.next.toString()
+                        nextUrl = response.next ?: "" // Asegura que nextUrl nunca sea null
                     )
                     pokeUiState = PokeUiState.Success(_state.allPokemons)
                 } catch (e: IOException) {
-                    PokeUiState.Error
+                    pokeUiState = PokeUiState.Error // Corrige para asignar un estado de error
                 }
             }
         }
     }
+
 
     private fun loadPokemonTypes() {
         viewModelScope.launch {
@@ -197,7 +214,6 @@ class PokemonViewModel : ViewModel() {
 
     private fun getPokemonResponseType(typeName: String) {
         viewModelScope.launch {
-            pokeUiState = PokeUiState.Loading
             try {
                 val response = PokeApi.retrofitService.getTypePoke(typeName)
                 val pokemons = response.pokemon.map { Pokemon(it.pokemon.name, it.pokemon.url) }
@@ -213,35 +229,7 @@ class PokemonViewModel : ViewModel() {
         }
     }
 
-    fun moveToLista() {
-        _state = _state.copy(
-            ventanaLista = true,
-            ventanaDetalles = false
-        )
-    }
-
-
-    fun moveToDetalles(selectedPokemon: PokemonDetails) {
-        _state = _state.copy(
-            ventanaLista = false,
-            ventanaDetalles = true,
-            currentPokemon = selectedPokemon
-        )
-    }
-
-    private val _descriptionState = MutableLiveData<PokemonFlavorText?>()
-    val descriptionState: LiveData<PokemonFlavorText?> get() = _descriptionState
-
-    fun fetchPokemonDescription(url: String) {
-        viewModelScope.launch {
-            try {
-                val description = PokeApi.retrofitService.getDescription(url)
-                _descriptionState.value = description
-            } catch (e: Exception) {
-                // Manejo de errores
-                e.printStackTrace()
-                _descriptionState.value = null
-            }
-        }
+    fun moveToDetalles(pokemon: PokemonDetails) {
+        sharedViewModel?.moveToDetalles(pokemon)
     }
 }
