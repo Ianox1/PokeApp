@@ -32,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import com.example.pokemon.R
 import com.example.pokemon.data.network.GeneralType
 import com.example.pokemon.model.HomeScreenState
 import com.example.pokemon.model.PokeIntent
@@ -66,14 +68,14 @@ fun FilterDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     IconButton(onClick = { onDismiss() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cerrar))
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Título del diálogo
                 Text(
-                    text = "Filtrar por tipo:",
+                    text = stringResource(R.string.filtrar),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier
                         .align(Alignment.Start)
@@ -120,7 +122,7 @@ fun FilterDialog(
                                     if (state.selectedFilter == typeDetail.name) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
-                                            contentDescription = "Seleccionado",
+                                            contentDescription = stringResource(R.string.seleccionado),
                                             modifier = Modifier
                                                 .align(Alignment.BottomEnd)
                                                 .size(16.dp),

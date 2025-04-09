@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.pokemon.R
 
@@ -23,6 +24,6 @@ fun ErrorScreen(modifier: Modifier = Modifier) {
             Image(
                 painter = painterResource(id = R.drawable.ic_connection_error), contentDescription = ""
             )
-            Text(text = "Error de carga", modifier = Modifier.padding(16.dp))
+            Text(text = stringResource(R.string.error), modifier = Modifier.padding(16.dp))
         }
     }

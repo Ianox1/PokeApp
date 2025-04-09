@@ -23,9 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.pokemon.R
 import com.example.pokemon.data.network.Pokemon
 import com.example.pokemon.data.network.PokemonDetails
 import com.example.pokemon.model.PokeIntent
@@ -78,12 +80,12 @@ fun PokemonItem(
                         pokemonDetails.sprites.frontDefault?.let { imageUrl ->
                             AsyncImage(
                                 model = imageUrl,
-                                contentDescription = "Imagen del Pokémon",
+                                contentDescription = stringResource(R.string.imagen_pokemon),
                                 modifier = Modifier.size(80.dp),
                                 contentScale = ContentScale.Crop
                             )
                         }
-                        if (pokemonDetails.types.any { it.type.name == "dark" }) {
+                        if (pokemonDetails.types.any { it.type.name == stringResource(R.string.dark) }) {
                             color = Color.White
                         } else {
                             color = Color.Black
@@ -98,7 +100,7 @@ fun PokemonItem(
                             )
                             Row(modifier = Modifier.padding(top = 15.dp)) {
                                 pokemonDetails.types.forEach { tipo ->
-                                    if (tipo.type.name == "dark"){
+                                    if (tipo.type.name == stringResource(R.string.dark)){
                                         color = Color.White
                                     }else{
                                         color = Color.Black
@@ -127,7 +129,7 @@ fun PokemonItem(
                         }
                     } else {
                         Text(
-                            text = "Cargando detalles...",
+                            text = stringResource(R.string.load_detail),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

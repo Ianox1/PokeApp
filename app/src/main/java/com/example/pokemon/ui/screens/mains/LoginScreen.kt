@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -61,7 +62,7 @@ fun LoginScreen(modifier: Modifier = Modifier) {
                     .padding(23.dp),
                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 textAlign = TextAlign.Center,
-                text = "CARGANDO...",
+                text = stringResource(R.string.cargando) ,
                 color = Color.White
             )
 
@@ -79,7 +80,7 @@ fun LoginScreen(modifier: Modifier = Modifier) {
                 fontFamily =  customFont,
                 textAlign = TextAlign.Center,
                 fontSize = 50.sp,
-                text = "PokeApp",
+                text = stringResource(R.string.app_name),
                 color = Color.Red
             )
 

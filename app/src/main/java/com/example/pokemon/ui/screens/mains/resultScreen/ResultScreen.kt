@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.pokemon.R
 import com.example.pokemon.data.network.Pokemon
@@ -139,7 +140,7 @@ fun SearchBar(modifier: Modifier = Modifier,
         onValueChange = {
             onPokeSearch(it)
         },
-        label = { Text("Buscar Pokémon", style = MaterialTheme.typography.bodySmall) },
+        label = { Text(stringResource(R.string.banner_search), style = MaterialTheme.typography.bodySmall) },
         modifier = modifier
             .fillMaxWidth()
             .height(48.dp)
@@ -149,7 +150,7 @@ fun SearchBar(modifier: Modifier = Modifier,
         trailingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = "Buscar",
+                contentDescription = stringResource(R.string.buscar),
                 tint = Color.Gray
             )
         }

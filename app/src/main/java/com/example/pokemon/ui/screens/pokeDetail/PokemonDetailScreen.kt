@@ -1,5 +1,6 @@
 package com.example.pokemon.ui.screens.pokeDetail
 
+import android.provider.Settings.Global.getString
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,10 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.pokemon.R
 import com.example.pokemon.model.DialogState
 import com.example.pokemon.model.PokemonDetailsState
 import com.example.pokemon.model.PokemonDialogModelView
@@ -67,7 +70,8 @@ fun PokemonDetailsScreen(
         Image(
             painter = painterResource(
                 getDrawableFromType(
-                    pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: "default"
+                    pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: stringResource(
+                        R.string.defecto)
                 )
             ),
             contentDescription = null,
@@ -100,7 +104,7 @@ fun PokemonDetailsScreen(
                 ) {
                     GlideImage(
                         model = imageUrl,
-                        contentDescription = "Imagen del Pokémon",
+                        contentDescription = stringResource(R.string.imagen_pokemon),
                         modifier = Modifier
                             .size(200.dp)
                             .align(Alignment.Center),
@@ -132,7 +136,7 @@ fun PokemonDetailsScreen(
             }
 
             Text(
-                text = "Información Básica:",
+                text = stringResource(R.string.info),
                 style = MaterialTheme.typography.titleMedium,
                 color = pokemonDetailsState.titleTextColor
             )
@@ -153,9 +157,16 @@ fun PokemonDetailsScreen(
                 modifier = Modifier.padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val altura = stringResource(R.string.altura,
+                    pokemonDetailsState.currentPokemon?.height.toString()
+                )
+                val peso = stringResource(R.string.peso,
+                    pokemonDetailsState.currentPokemon?.weight.toString()
+                )
+
                 listOf(
-                    "Altura: ${pokemonDetailsState.currentPokemon?.height} dm",
-                    "Peso: ${pokemonDetailsState.currentPokemon?.weight} hg"
+                    altura,
+                    peso
                 ).forEach { text ->
                     Card(
                         colors = CardDefaults.cardColors(containerColor = pokemonDetailsState.primaryTypeColor),
@@ -198,7 +209,7 @@ fun PokemonDetailsScreen(
             }
 
             Text(
-                text = "Habilidades:",
+                text = stringResource(R.string.habilidades),
                 style = MaterialTheme.typography.titleMedium,
                 color = pokemonDetailsState.titleTextColor
             )
@@ -221,7 +232,7 @@ fun PokemonDetailsScreen(
             }
 
             Text(
-                text = "Estadísticas:",
+                text = stringResource(R.string.estadisticas),
                 style = MaterialTheme.typography.titleMedium,
                 color = pokemonDetailsState.titleTextColor
             )
@@ -247,7 +258,8 @@ fun PokemonDetailsScreen(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = "Base: ${stat.baseStat}, Esfuerzo: ${stat.effort}",
+
+                                    text = stringResource(R.string.stat_format,stat.baseStat,stat.effort),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.White
                                 )
@@ -260,7 +272,7 @@ fun PokemonDetailsScreen(
                 PokemonDialog(
                     imageUrl = pokemonDetailsState.currentPokemon?.sprites?.other?.showdown?.frontShiny,
                     backgroundDrawable = getDrawableFromType(
-                        pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: "default"
+                        pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: stringResource(R.string.defecto)
                     ),
                     onDismiss = { onChangeDialog() },
                     getUrl = pokemonDetailsState.currentPokemon?.species?.url,

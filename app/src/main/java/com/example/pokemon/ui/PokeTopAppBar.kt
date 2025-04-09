@@ -1,5 +1,6 @@
 package com.example.pokemon.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -13,6 +14,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import com.example.pokemon.R
@@ -32,7 +34,7 @@ fun PokeTopAppBar(
         scrollBehavior = scrollBehavior,
         title = {
             Text(
-                text = "PokeApp",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.Red,
                 fontFamily = customFont
@@ -44,7 +46,7 @@ fun PokeTopAppBar(
                     IconButton(onClick = onBackArrowClick) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver a la lista",
+                            contentDescription = stringResource(R.string.volver_lista),
                             tint = Color.White
                         )
                     }

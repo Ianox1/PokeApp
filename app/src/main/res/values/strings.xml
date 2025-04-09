@@ -1,3 +1,27 @@
 <resources>
-    <string name="app_name">Pokemon</string>
+    <string name="app_name">PokeApp</string>
+    <string name="cargando">CARGANDO...</string>
+    <string name="seleccionado">Seleccionado</string>
+    <string name="filtrar">Filtrar por tipo:</string>
+    <string name="cerrar">Cerrar</string>
+    <string name="banner_search">Buscar Pokémon</string>
+    <string name="buscar">Buscar</string>
+    <string name="dark">dark</string>
+    <string name="load_detail">Cargando detalles...</string>
+    <string name="imagen_pokemon">Imagen del Pokémon</string>
+    <string name="error">Error de carga</string>
+<string name="defecto">default</string>
+<string name="info">Información Básica:</string>
+
+        <string name="altura">Altura: %1$s dm</string>
+        <string name="peso">Peso: %1$s hg</string>
+<string name="tipos">Tipos:</string>
+<string name="habilidades">Habilidades:</string>
+<string name="estadisticas">Estadísticas:</string>
+    <string name="stat_format">Base: %1$s, Esfuerzo: %2$s</string>
+<string name="volver_lista">Volver a la lista</string>
+
+
+
+
 </resources>
