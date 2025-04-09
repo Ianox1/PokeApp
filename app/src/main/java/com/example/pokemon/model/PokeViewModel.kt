@@ -1,5 +1,6 @@
 package com.example.pokemon.model
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,6 +14,7 @@ import com.example.pokemon.data.network.Pokemon
 import com.example.pokemon.data.network.PokemonDetails
 import com.example.pokemon.data.network.PokemonFlavorText
 import com.example.pokemon.data.network.PokemonResponseType
+import com.example.pokemon.data.repository.PokeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -59,6 +61,7 @@ sealed interface PokeIntent {
 class PokemonViewModel @Inject constructor() : ViewModel() {
 
     private var sharedViewModel: SharedViewModel? = null
+    private var repository: PokeRepository? = null
 
     private var _state by mutableStateOf(PokemonState())
     val state: PokemonState
@@ -78,9 +81,12 @@ class PokemonViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    fun setRepository(repository: PokeRepository) {
+        this.repository = repository
+    }
+
     init {
         getPokeData()
-        loadPokemonTypes()
     }
 
     fun handleIntent(intent: PokeIntent) {
@@ -100,17 +106,19 @@ class PokemonViewModel @Inject constructor() : ViewModel() {
         viewModelScope.launch {
             pokeUiState = PokeUiState.Login
             delay(3000)
-            pokeUiState = try {
-                val listResult = PokeApi.retrofitService.getPokemons(_state.nextUrl).results
-                val response = PokeApi.retrofitService.getPokemons(_state.nextUrl)
-                _state = _state.copy(
-                    allPokemons = listResult,
-                    allPokemonsType = listResult,
-                    nextUrl = response.next.toString() // Actualiza `nextUrl`
-                )
-                PokeUiState.Success(listResult) // Estado de éxito con los datos obtenidos
-            } catch (e: IOException) {
-                PokeUiState.Error // Maneja un error de red
+            repository?.let {
+                pokeUiState = try {
+                    val listResult = it.getPokemons(_state.nextUrl).results
+                    val response = it.getPokemons(_state.nextUrl)
+                    _state = _state.copy(
+                        allPokemons = listResult,
+                        allPokemonsType = listResult,
+                        nextUrl = response.next.toString() // Actualiza `nextUrl`
+                    )
+                    PokeUiState.Success(listResult) // Estado de éxito con los datos obtenidos
+                } catch (e: IOException) {
+                    PokeUiState.Error // Maneja un error de red
+                }
             }
         }
     }
@@ -118,13 +126,15 @@ class PokemonViewModel @Inject constructor() : ViewModel() {
     private fun cargarDatos() {
         viewModelScope.launch {
             pokeUiState = PokeUiState.Loading
-            try {
-                pokeUiState = PokeUiState.Success(_state.allPokemons) // Restaura la lista completa
-                _state = _state.copy(allPokemonsType = _state.allPokemons)
-                searchPokemons(_state.searchState.searchQuery)
-                _state.canLoadMore = true
-            } catch (e: Exception) {
-                pokeUiState = PokeUiState.Error
+            repository?.let {
+                try {
+                    pokeUiState = PokeUiState.Success(_state.allPokemons) // Restaura la lista completa
+                    _state = _state.copy(allPokemonsType = _state.allPokemons)
+                    searchPokemons(_state.searchState.searchQuery)
+                    _state.canLoadMore = true
+                } catch (e: Exception) {
+                    pokeUiState = PokeUiState.Error
+                }
             }
         }
     }
@@ -133,34 +143,38 @@ class PokemonViewModel @Inject constructor() : ViewModel() {
         if (_state.canLoadMore && _state.nextUrl.isNotEmpty()) { // Verifica si hay ruta en nextUrl
             viewModelScope.launch {
                 pokeUiState = PokeUiState.Loading
-                try {
-                    val response = PokeApi.retrofitService.getPokemons(_state.nextUrl)
-                    val newPokemons = response.results
-                    _state = _state.copy(
-                        allPokemons = _state.allPokemons + newPokemons,
-                        allPokemonsType = _state.allPokemonsType + newPokemons,
-                        nextUrl = response.next ?: "" // Asegura que nextUrl nunca sea null
-                    )
-                    pokeUiState = PokeUiState.Success(_state.allPokemons)
-                } catch (e: IOException) {
-                    pokeUiState = PokeUiState.Error // Corrige para asignar un estado de error
+                repository?.let {
+                    try {
+                        val response = it.getPokemons(_state.nextUrl)
+                        val newPokemons = response.results
+                        _state = _state.copy(
+                            allPokemons = _state.allPokemons + newPokemons,
+                            allPokemonsType = _state.allPokemonsType + newPokemons,
+                            nextUrl = response.next ?: "" // Asegura que nextUrl nunca sea null
+                        )
+                        pokeUiState = PokeUiState.Success(_state.allPokemons)
+                    } catch (e: IOException) {
+                        pokeUiState = PokeUiState.Error // Corrige para asignar un estado de error
+                    }
                 }
             }
         }
     }
 
-
     private fun loadPokemonTypes() {
         viewModelScope.launch {
-            try {
-                val typeResponse = PokeApi.retrofitService.getTypes()
-                _state = _state.copy(
-                    pokemonTypes = typeResponse.results
-                )
-            } catch (e: IOException) {
-                PokeUiState.Error
+            repository?.let {
+                try {
+                    val typeResponse = it.getTypes()
+                    _state = _state.copy(
+                        pokemonTypes = typeResponse.results
+                    )
+                } catch (e: IOException) {
+                    PokeUiState.Error
+                }
             }
         }
+        Log.e("hola",state.pokemonTypes.size.toString())
     }
 
     private fun updateSearchQuery(query: String) {
@@ -183,48 +197,54 @@ class PokemonViewModel @Inject constructor() : ViewModel() {
 
     private fun getPokemonDetails(url: String) {
         viewModelScope.launch {
-            val details = try {
-                PokeApi.retrofitService.getPokemonDetails(url)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
+            repository?.let {
+                val details = try {
+                    it.getPokemonDetails(url)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+                val updatedDetailsMap = _state.pokemonDetailsMap.toMutableMap()
+                updatedDetailsMap[url] = details
+                _state = _state.copy(
+                    pokemonDetailsMap = updatedDetailsMap
+                )
             }
-            val updatedDetailsMap = _state.pokemonDetailsMap.toMutableMap()
-            updatedDetailsMap[url] = details
-            _state = _state.copy(
-                pokemonDetailsMap = updatedDetailsMap
-            )
         }
     }
 
     private fun getPokemonTypeDetails(typeUrl: String) {
         viewModelScope.launch {
-            try {
-                val response = PokeApi.retrofitService.getTypeDetails(typeUrl)
-                val updatedTypeDetailsMap = _state.typeDetailsMap.toMutableMap()
-                updatedTypeDetailsMap[typeUrl] = response
-                _state = _state.copy(
-                    typeDetailsMap = updatedTypeDetailsMap
-                )
-            } catch (e: IOException) {
-                pokeUiState = PokeUiState.Error
+            repository?.let {
+                try {
+                    val response = it.getTypeDetails(typeUrl)
+                    val updatedTypeDetailsMap = _state.typeDetailsMap.toMutableMap()
+                    updatedTypeDetailsMap[typeUrl] = response
+                    _state = _state.copy(
+                        typeDetailsMap = updatedTypeDetailsMap
+                    )
+                } catch (e: IOException) {
+                    pokeUiState = PokeUiState.Error
+                }
             }
         }
     }
 
     private fun getPokemonResponseType(typeName: String) {
         viewModelScope.launch {
-            try {
-                val response = PokeApi.retrofitService.getTypePoke(typeName)
-                val pokemons = response.pokemon.map { Pokemon(it.pokemon.name, it.pokemon.url) }
-                _state = _state.copy(
-                    allPokemonsType = pokemons
-                )
-                pokeUiState = PokeUiState.Success(pokemons)
-                searchPokemons(_state.searchState.searchQuery)
-                _state.canLoadMore = false
-            } catch (e: IOException) {
-                pokeUiState = PokeUiState.Error
+            repository?.let {
+                try {
+                    val response = it.getTypePoke(typeName)
+                    val pokemons = response.pokemon.map { Pokemon(it.pokemon.name, it.pokemon.url) }
+                    _state = _state.copy(
+                        allPokemonsType = pokemons
+                    )
+                    pokeUiState = PokeUiState.Success(pokemons)
+                    searchPokemons(_state.searchState.searchQuery)
+                    _state.canLoadMore = false
+                } catch (e: IOException) {
+                    pokeUiState = PokeUiState.Error
+                }
             }
         }
     }

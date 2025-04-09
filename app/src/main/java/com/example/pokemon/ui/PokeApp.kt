@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pokemon.data.network.PokeApi
+import com.example.pokemon.data.repository.PokeRepository
+import com.example.pokemon.data.repository.PokeRepositoryImpl
 import com.example.pokemon.model.HomeScreenIntent
 import com.example.pokemon.model.HomeViewModel
 import com.example.pokemon.model.PokeIntent
@@ -30,11 +34,17 @@ fun PokeApp(innerPadding: PaddingValues) {
     val homeViewModel: HomeViewModel = viewModel()
     val detailsViewModel: PokemonDetailsViewModel = hiltViewModel()
     val dialogModelView: PokemonDialogModelView = hiltViewModel()
-
-    pokeViewModel.setSharedViewModel(sharedViewModel)
-    detailsViewModel.setSharedViewModel(sharedViewModel)
+    val repository: PokeRepository = PokeRepositoryImpl(PokeApi.retrofitService)
 
 
+    LaunchedEffect(Unit) {
+        pokeViewModel.setRepository(repository)
+        pokeViewModel.setSharedViewModel(sharedViewModel)
+        detailsViewModel.setSharedViewModel(sharedViewModel)
+        dialogModelView.setRepository(repository)
+    }
+
+    pokeViewModel.handleIntent(PokeIntent.LoadPokemonTypes)
 
 
     Surface(
@@ -53,7 +63,7 @@ fun PokeApp(innerPadding: PaddingValues) {
                             pokemonDialogState = dialogModelView.dialogState,
                             onDimiss = {homeViewModel.handleHomeScreenIntent(HomeScreenIntent.DismissFilterDialog)},
                             onClickFilter = { homeViewModel.handleHomeScreenIntent(HomeScreenIntent.SetSelectedFilter(it)) },
-                            onClick = {homeViewModel.handleHomeScreenIntent(HomeScreenIntent.ShowFilterDialog)},
+                            onClick = {homeViewModel.handleHomeScreenIntent(HomeScreenIntent.ShowFilterDialog) },
                             getPokeType ={ pokeViewModel.handleIntent(PokeIntent.GetPokemonTypeDetails(it)) } ,
                             cargarData = {pokeViewModel.handleIntent(PokeIntent.CargarDatos)},
                             pokemonType = {pokeViewModel.handleIntent(PokeIntent.GetPokemonResponseType(it))},

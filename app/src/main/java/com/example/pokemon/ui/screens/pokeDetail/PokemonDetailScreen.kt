@@ -258,7 +258,7 @@ fun PokemonDetailsScreen(
             }
             if (pokemonDetailsState.isDialogVisible) {
                 PokemonDialog(
-                    imageUrl = pokemonDetailsState.currentPokemon?.sprites?.other?.showdown?.frontDefault,
+                    imageUrl = pokemonDetailsState.currentPokemon?.sprites?.other?.showdown?.frontShiny,
                     backgroundDrawable = getDrawableFromType(
                         pokemonDetailsState.currentPokemon?.types?.get(0)?.type?.name ?: "default"
                     ),

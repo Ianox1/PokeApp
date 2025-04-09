@@ -90,6 +90,7 @@ fun FilterDialog(
                     contentPadding = PaddingValues(8.dp)
                 ) {
                     items(pokemonState.pokemonTypes) { typeDetail ->
+
                         val typeDetails = pokemonState.typeDetailsMap[typeDetail.url]
                         if (typeDetails != null) {
                             if (typeDetails.sprites.generation.EspadaEscudo.icon != null) {
